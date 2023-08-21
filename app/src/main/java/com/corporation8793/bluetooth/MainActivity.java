@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private final static int REQUEST_ENABLE_BT = 1; // 블루투스 활성화 상태
 
     //UUID생성
-    private static final UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private static final UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
 
     TextView test_text;
     Button paired_button, search_button, send_button;
@@ -253,11 +253,43 @@ public class MainActivity extends AppCompatActivity {
 
                 final String name = arrayAdapter.getItem(position);
                 final String address = arrayList.get(position);
+                boolean flag = true;
 
                 Log.e("testtest", name);
                 Log.e("testtest", address);
 
-                connectDevice(name);
+                BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
+
+                //connectDevice(name);
+                try {
+                    bluetoothSocket = createBluetoothSocket(device);
+                    Log.e("testtest", bluetoothSocket+"");
+                } catch (IOException e) {
+                    flag = false;
+                    test_text.setText("socket creation failed!");
+                    Log.e("testtest", "1" + e);
+                    e.printStackTrace();
+                }
+
+                try {
+                    if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    }
+                    bluetoothSocket.connect();
+                    test_text.setText("connected to "+name);
+                } catch (IOException e) {
+                    test_text.setText("socket connect failed! " + e+"");
+                    Log.e("testtest", "2" + e);
+//                    try {
+//                        bluetoothSocket.close();
+//                    } catch (IOException e2) {
+//                        Log.e("testtest", "unable to close() socket during connection failure", e2);
+//                        test_text.setText("socket close " + e+"");
+//                    }
+                }
+
+                connectedThread = new ConnectedThread(bluetoothSocket);
+                //test_text.setText("connected to "+name);
+                connectedThread.start();
             }
         });
 
@@ -310,6 +342,7 @@ public class MainActivity extends AppCompatActivity {
             //사용자가 선택한 이름과 같은 디바이스로 설정하고 반복문 종료
             if (deviceName.equals(tempDevice.getName())) {
                 bluetoothDevice = tempDevice;
+                Log.e("testtest", "cccc:"+bluetoothDevice+"");
                 break;
             }
         }
@@ -326,9 +359,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(uuid);
+            //bluetoothSocket = bluetoothDevice.createRfcommSocketToServiceRecord(uuid);
             //bluetoothSocket = bluetoothDevice.createInsecureRfcommSocketToServiceRecord(uuid);
-            //bluetoothSocket = createBluetoothSocket(bluetoothDevice);
+            bluetoothSocket = createBluetoothSocket(bluetoothDevice);
             bluetoothSocket.connect();
 
             connectedThread = new ConnectedThread(bluetoothSocket);
@@ -351,13 +384,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
-        if(Build.VERSION.SDK_INT >= 10){
-            try {
-                final Method m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", UUID.class);
-                return (BluetoothSocket) m.invoke(device, uuid);
-            } catch (Exception e) {
-                Log.e("testtest", "Could not create Insecure RFComm Connection", e);
-            }
+        try {
+            final Method m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", UUID.class);
+            return (BluetoothSocket) m.invoke(device, uuid);
+        } catch (Exception e) {
+            Log.e("testtest", "Could not create Insecure RFComm Connection", e);
         }
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
         }
@@ -388,9 +419,21 @@ public class MainActivity extends AppCompatActivity {
                         Log.e("testtest", deviceName);
                         Log.e("testtest", deviceHardwareAddress);
 
-                        arrayAdapter2.add(deviceName);
-                        arrayList2.add(deviceHardwareAddress);
-                        arrayAdapter2.notifyDataSetChanged();
+                        boolean check = true;
+
+                        if (arrayList2 != null) {
+                            for (String address : arrayList2) {
+                                if (address.equals(deviceHardwareAddress)) {
+                                    check = false;
+                                }
+                            }
+                        }
+
+                        if (check) {
+                            arrayAdapter2.add(deviceName);
+                            arrayList2.add(deviceHardwareAddress);
+                            arrayAdapter2.notifyDataSetChanged();
+                        }
                     } else {
                         Log.e("testtest", "null");
                     }
