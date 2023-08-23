@@ -29,6 +29,7 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.google.android.material.slider.Slider;
@@ -162,8 +163,8 @@ public class MainActivity extends AppCompatActivity {
         uv_light_img.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) { // on
-                    if (bluetoothCheck) {
+                if (bluetoothCheck) {
+                    if (isChecked) { // on
                         float time = time_slider.getValue();
                         Log.e("testtest", time+"");
 
@@ -215,11 +216,17 @@ public class MainActivity extends AppCompatActivity {
                             timerCall = new Timer();
                             timerCall.schedule(timerTask, 0, 1000);
                         }
+                    } else { // off
+                        if (connectedThread != null) {
+                            if (timerCall != null) {
+                                timerCall.cancel();
+                            }
+
+                            connectedThread.write("b");
+                        }
                     }
-                } else { // off
-                    if (connectedThread != null) {
-                        connectedThread.write("b");
-                    }
+                } else {
+                    Toast.makeText(getApplicationContext(), "블루투스 연결부터 해주세요", Toast.LENGTH_SHORT).show();
                 }
             }
         });
