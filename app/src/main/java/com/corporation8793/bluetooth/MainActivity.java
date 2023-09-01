@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
@@ -24,15 +23,19 @@ import android.graphics.Shader;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.google.android.material.slider.Slider;
+import com.xw.repo.BubbleSeekBar;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -41,6 +44,9 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.rxjava3.core.Observable;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,10 +56,13 @@ public class MainActivity extends AppCompatActivity {
     //UUID생성
     private static final UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
 
-    TextView main_text;
+    TextView main_text, time_check_text, bluetooth_text;
     ImageView bluetooth_img;
     ToggleButton lock_img, uv_light_img;
     Slider time_slider;
+    SeekBar time_seekbar;
+    BubbleSeekBar bubble_seekbar;
+    ProgressBar time_progress;
 
     BluetoothManager bluetoothManager; // 블루투스 매니저
     BluetoothAdapter bluetoothAdapter; // 블루투스 어댑터
@@ -64,11 +73,18 @@ public class MainActivity extends AppCompatActivity {
     boolean bluetoothCheck = false;
 
     private Timer timerCall;
-    private int nCnt;
+    private int nCnt, min, second;
     TimerTask timerTask;
+    private float time;
 
-//    ProgressDialog progressDialog;
+    ProgressDialog progressDialog;
 //    ConstraintLayout progress;
+    String connectDevice;
+
+    private long timeCountInMilliSeconds = 1 * 60000;
+    private CountDownTimer countDownTimer;
+    int count, count2;
+    Observable<Long> source;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,13 +96,18 @@ public class MainActivity extends AppCompatActivity {
         lock_img = findViewById(R.id.lock_img);
         uv_light_img = findViewById(R.id.uv_light_img);
         time_slider = findViewById(R.id.time_slider);
+        time_check_text = findViewById(R.id.time_check_text);
+        bluetooth_text = findViewById(R.id.bluetooth_text);
 //        progress = findViewById(R.id.progress);
+        time_seekbar = findViewById(R.id.time_seekbar);
+        bubble_seekbar = findViewById(R.id.bubble_seekbar);
+        time_progress = findViewById(R.id.time_progress);
 
         // 타이머
         nCnt = 0;
 
-//        progressDialog = new ProgressDialog(this);
-//        progressDialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        progressDialog = new ProgressDialog(this);
+        progressDialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
 
         // 타이틀 그라데이션
         main_text.setTextColor(Color.parseColor("#64abe4"));
@@ -141,7 +162,58 @@ public class MainActivity extends AppCompatActivity {
                     }
                     connectedThread.write("b");
                     uv_light_img.setChecked(false);
+                    time_check_text.setText("");
                 }
+            }
+        });
+
+        int step = 4;
+        int max = 10;
+        int min2 = 0;
+
+        time_seekbar.setMax((max - min2) / step);
+
+        // seekbar
+        time_seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (!fromUser) {
+                    return;
+                }
+                Log.e("testtest", progress+"");
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        // bubble seekbar
+        bubble_seekbar.setOnProgressChangedListener(new BubbleSeekBar.OnProgressChangedListener() {
+            @Override
+            public void onProgressChanged(BubbleSeekBar bubbleSeekBar, int progress, float progressFloat, boolean fromUser) {
+//                if (0.0 < progressFloat) {
+//                    if (progressFloat < 5.0) {
+//                        bubbleSeekBar.setProgress((float) 3.3);
+//                    }
+//                }
+                Log.e("testtes", progressFloat+"");
+            }
+
+            @Override
+            public void getProgressOnActionUp(BubbleSeekBar bubbleSeekBar, int progress, float progressFloat) {
+                //bubbleSeekBar.setProgress(5.5F);
+
+            }
+
+            @Override
+            public void getProgressOnFinally(BubbleSeekBar bubbleSeekBar, int progress, float progressFloat, boolean fromUser) {
             }
         });
 
@@ -165,31 +237,155 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (bluetoothCheck) {
                     if (isChecked) { // on
-                        float time = time_slider.getValue();
+                        time_progress.setVisibility(View.VISIBLE);
+//                        time = bubble_seekbar.getProgress();
+//                        Log.e("testtest", time+"");
+//
+//                        if ((int) time == 0) {
+//                            if (connectedThread != null) {
+//                                connectedThread.write("a");
+//                            }
+//                        } else {
+//                            switch ((int) time) {
+//                                case 1: case 2: case 3: { // 3(180)
+//                                    nCnt = 4;
+//                                    //nCnt = 180;
+//                                    break;
+//                                }
+//                                case 4: case 5: case 6: case 7: { // 5(300)
+//                                    nCnt = 6;
+//                                    break;
+//                                }
+//                                case 8: case 9: case 10: { // 10(600)
+//                                    nCnt = 11;
+//                                    break;
+//                                }
+//                                default:
+//                                    break;
+//                            }
+//
+//                            if (timerTask != null) {
+//                                timerTask.cancel();
+//                            }
+//
+//                            timerTask = new TimerTask() {
+//                                @Override
+//                                public void run() {
+//                                    if (connectedThread != null) {
+//                                        nCnt--;
+//
+//                                        if (nCnt == 0 || nCnt == 10) {
+//                                            bubble_seekbar.setProgress(nCnt);
+//                                        } else {
+//                                            float count = bubble_seekbar.getProgressFloat();
+//                                            float value = ((count / (nCnt + 1)) * (float)(nCnt - 1));
+//                                            Log.e("testtest", "value : " + value+"");
+//                                            bubble_seekbar.setProgress(value);
+//                                        }
+//
+////                                        if (nCnt == 10) {
+////                                            bubble_seekbar.setProgress(10);
+////                                        } else if (nCnt == 9) {
+////                                            bubble_seekbar.setProgress(9.32F);
+////                                        } else if (nCnt == 8) {
+////                                            bubble_seekbar.setProgress(8.64F);
+////                                        } else if (nCnt == 7) {
+////                                            bubble_seekbar.setProgress(7.96F);
+////                                        } else if (nCnt == 6) {
+////                                            bubble_seekbar.setProgress(7.28F);
+////                                        } else if (nCnt == 5) {
+////                                            bubble_seekbar.setProgress(6.7F);
+////                                        } else if (nCnt == 4) {
+////                                            bubble_seekbar.setProgress(4.95F);
+////                                        } else if (nCnt == 3) {
+////                                            bubble_seekbar.setProgress(3.3F);
+////                                        } else if (nCnt == 2) {
+////                                            bubble_seekbar.setProgress(2.2F);
+////                                        } else if (nCnt == 1) {
+////                                            bubble_seekbar.setProgress(1.1F);
+////                                        } else if (nCnt == 0) {
+////                                            bubble_seekbar.setProgress(0);
+////                                        }
+//
+//                                        min = nCnt/60;
+//                                        second = nCnt%60;
+//
+//                                        if (nCnt <= 0) {
+//                                            connectedThread.write("b");
+//                                            uv_light_img.setChecked(false);
+//                                            timerCall.cancel();
+//                                            runOnUiThread(new Runnable() {
+//                                                @Override
+//                                                public void run() {
+//                                                    time_check_text.setText("");
+//                                                }
+//                                            });
+//                                        } else {
+//                                            connectedThread.write("a");
+//                                            Log.e("testtest", nCnt+"");
+//                                            Log.e("testtest", min + "분 "+ second + "초");
+//                                            runOnUiThread(new Runnable() {
+//                                                @Override
+//
+//                                                public void run() {
+//                                                    if (min == 0) {
+//                                                        time_check_text.setText(second + "초");
+//                                                    } else {
+//                                                        time_check_text.setText(min + "분 "+ second + "초");
+//                                                    }
+//
+////                                                    time = time - 0.1f;
+////                                                    time_slider.setValue(time);
+////
+////                                                    Log.e("testtest", time+"");
+//                                                }
+//                                            });
+//                                        }
+//                                    }
+//                                }
+//                            };
+//
+//                            timerCall = new Timer();
+//                            timerCall.schedule(timerTask, 0, 1000);
+//                        }
+                        time = time_slider.getValue();
                         Log.e("testtest", time+"");
 
                         if ((int) time == 1) {
                             if (connectedThread != null) {
                                 connectedThread.write("a");
                             }
+                            setTimerValues(0);
                         } else {
                             switch ((int) time) {
                                 case 4: { // 3(180)
-                                    nCnt = 10;
+                                    nCnt = 4;
                                     //nCnt = 180;
+                                    //setTimerValues(3);
+                                    time_progress.setMax(300);
+                                    time_progress.setProgress(300);
                                     break;
                                 }
                                 case 7: { // 5(300)
-                                    nCnt = 300;
+                                    nCnt = 6;
+                                    //setTimerValues(5);
+                                    time_progress.setMax(500);
+                                    time_progress.setProgress(500);
                                     break;
                                 }
                                 case 10: { // 10(600)
-                                    nCnt = 600;
+                                    nCnt = 11;
+                                    //setTimerValues(10);
+                                    time_progress.setMax(1000);
+                                    time_progress.setProgress(1000);
                                     break;
                                 }
                                 default:
                                     break;
                             }
+
+                            //setProgressBarValues();
+                            //startCountdownTimer();
 
                             if (timerTask != null) {
                                 timerTask.cancel();
@@ -201,13 +397,68 @@ public class MainActivity extends AppCompatActivity {
                                     if (connectedThread != null) {
                                         nCnt--;
 
+                                        min = nCnt/60;
+                                        second = nCnt%60;
+
                                         if (nCnt <= 0) {
                                             connectedThread.write("b");
                                             uv_light_img.setChecked(false);
                                             timerCall.cancel();
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    time_check_text.setText("");
+                                                    time_progress.setProgress(nCnt, true);
+                                                    //time_progress.setVisibility(View.INVISIBLE);
+                                                }
+                                            });
                                         } else {
                                             connectedThread.write("a");
                                             Log.e("testtest", nCnt+"");
+                                            Log.e("testtest", min + "분 "+ second + "초");
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+
+                                                public void run() {
+                                                    if (min == 0) {
+                                                        time_check_text.setText(second + "초");
+                                                    } else {
+                                                        time_check_text.setText(min + "분 "+ second + "초");
+                                                    }
+
+//                                                    time = time - 0.1f;
+//                                                    time_slider.setValue(time);
+//
+//                                                    Log.e("testtest", time+"");
+
+//                                                    source = Observable.interval(1000L, TimeUnit.MILLISECONDS).map(interval ->
+//                                                            interval + 1).take(10);
+//
+//                                                    source.subscribe(it -> {
+//                                                       Log.e("testtest", it+"");
+//                                                        //time_progress.setProgress((int) (nCnt - it), true);
+//                                                        time_progress.setProgress((int) (time_progress.getProgress() - it), true);
+//                                                    });
+
+                                                    //time_progress.setProgress(nCnt, true);
+
+                                                    source = Observable.interval(10L, TimeUnit.MILLISECONDS).map(interval ->
+                                                            interval + 1).take(100);
+
+                                                    int currentProgress = time_progress.getProgress();
+
+                                                    source.subscribe(it -> {
+                                                        //Log.e("testtest", it+"");
+                                                        //time_progress.setProgress((int) (nCnt - it), true);
+                                                        if (nCnt != 0) {
+                                                            time_progress.setProgress(currentProgress - it.intValue());
+                                                        } else {
+                                                            time_progress.setProgress(0, true);
+                                                            time_progress.setVisibility(View.INVISIBLE);
+                                                        }
+                                                    });
+                                                }
+                                            });
                                         }
                                     }
                                 }
@@ -221,8 +472,16 @@ public class MainActivity extends AppCompatActivity {
                             if (timerCall != null) {
                                 timerCall.cancel();
                             }
-
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    time_check_text.setText("");
+                                }
+                            });
                             connectedThread.write("b");
+                            if (countDownTimer != null) {
+                                stopCountdownTimer();
+                            }
                         }
                     }
                 } else {
@@ -271,6 +530,9 @@ public class MainActivity extends AppCompatActivity {
                         if (!charSequences[which].toString().equals("취소")) {
                             if (!charSequences[which].toString().equals("없음")) {
                                 //connectDevice(charSequences[which].toString());
+                                //dialog.dismiss();
+                                //progressDialog.show();
+                                connectDevice = charSequences[which].toString();
                                 setConnectDevice(charSequences2[which].toString());
                             }
                         }
@@ -285,8 +547,70 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+//    private void getInterval() {
+//        Observable.interval(1L, TimeUnit.MILLISECONDS).map( interval ->
+//                interval - 0.1).take(100);
+//    }
+
+    private Observable<Long> getInterval() {
+        return Observable.interval(1L, TimeUnit.MILLISECONDS).map( interval ->
+                interval - 1).take(100);
+    }
+
+    private void setTimerValues(int setTime) {
+        int time;
+
+        if (setTime == 1) {
+            time = 0;
+        } else {
+            time = setTime;
+        }
+
+        timeCountInMilliSeconds = time * 1000L;
+    }
+
+    private void startCountdownTimer() {
+        count = (int) (timeCountInMilliSeconds / 1000);
+        Log.e("testtestt", count+"");
+
+        count2 = 0;
+
+        countDownTimer = new CountDownTimer(timeCountInMilliSeconds, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                Log.e("testtestt", "count : " + count+"");
+                Log.e("testtestt", "count2 : " + count2+"");
+
+                time_progress.setProgress((int) (millisUntilFinished / 1000),true);
+                //Log.e("testtest", timeCountInMilliSeconds+"");
+                Log.e("testtestt", millisUntilFinished+"");
+
+                count--;
+                count2++;
+            }
+
+            @Override
+            public void onFinish() {
+                //setProgressBarValues();
+                time_progress.setProgress(0);
+                Log.e("testtestt", "end");
+            }
+        }.start();
+        countDownTimer.start();
+    }
+
+    private void setProgressBarValues() {
+        time_progress.setMax((int) timeCountInMilliSeconds / 1000);
+        time_progress.setProgress((int) timeCountInMilliSeconds /1000);
+    }
+
+    private void stopCountdownTimer() {
+        countDownTimer.cancel();
+    }
+
     // 페어링된 블루투스 기기 연결
     public void setConnectDevice(String address) {
+        progressDialog.show();
         BluetoothDevice device = bluetoothAdapter.getRemoteDevice(address);
         Log.e("testtestt", device + "");
 
@@ -305,7 +629,10 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e("testtest", "connection failed! : " + e + "");
             e.printStackTrace();
+            // 이미 연결이 되어있는 케이스 체크하기
+            Toast.makeText(getApplicationContext(), "연결실패! 다시 시도해주세요", Toast.LENGTH_SHORT).show();
         }
+        progressDialog.dismiss();
     }
 
     // 기기 연결 확인
@@ -318,10 +645,12 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("testtest", "열결됨");
                 bluetooth_img.setBackgroundResource(R.drawable.bluetooth_image_on);
                 bluetoothCheck = true;
+                bluetooth_text.setText("연결된 기기 : " + connectDevice);
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
                 Log.e("testtest", "열결 끊김");
                 bluetooth_img.setBackgroundResource(R.drawable.bluetooth_image_off);
                 bluetoothCheck = false;
+                bluetooth_text.setText("연결된 기기 : 없음");
             }
         }
     };
@@ -329,27 +658,27 @@ public class MainActivity extends AppCompatActivity {
     // 블루투스 권한 확인
     private void bluetoothCheck() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (MainActivity.this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-
-                builder.setTitle("블루투스에 대한 액세스가 필요합니다");
-                builder.setMessage("어플리케이션이 비콘을 감지 할 수 있도록 위치 정보 액세스 권한을 부여하십시오.");
-                builder.setPositiveButton(android.R.string.ok, null);
-
-                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialog) {
-                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_ACCESS_FINE_LOCATION);
-                    }
-                });
-                builder.show();
-            }
+//            if (MainActivity.this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//                final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+//
+//                builder.setTitle("블루투스에 대한 액세스가 필요합니다");
+//                builder.setMessage("어플리케이션이 비콘을 감지 할 수 있도록 위치 정보 액세스 권한을 부여하십시오.");
+//                builder.setPositiveButton(android.R.string.ok, null);
+//
+//                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+//                    @Override
+//                    public void onDismiss(DialogInterface dialog) {
+//                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_ACCESS_FINE_LOCATION);
+//                    }
+//                });
+//                builder.show();
+//            }
 
             if (MainActivity.this.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
 
                 builder.setTitle("블루투스에 대한 액세스가 필요합니다");
-                builder.setMessage("어플리케이션이 블루투스를 연결 할 수 있도록 위치 정보 액세스 권한을 부여하십시오1.");
+                builder.setMessage("어플리케이션이 블루투스를 연결 할 수 있도록 위치 정보 액세스 권한을 부여하십시오.");
                 builder.setPositiveButton(android.R.string.ok, null);
 
                 builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
@@ -361,21 +690,21 @@ public class MainActivity extends AppCompatActivity {
                 builder.show();
             }
 
-            if (MainActivity.this.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-
-                builder.setTitle("블루투스에 대한 액세스가 필요합니다");
-                builder.setMessage("어플리케이션이 블루투스를 감지 할 수 있도록 위치 정보 액세스 권한을 부여하십시오2.");
-                builder.setPositiveButton(android.R.string.ok, null);
-
-                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialog) {
-                        requestPermissions(new String[]{Manifest.permission.BLUETOOTH_SCAN}, 2);
-                    }
-                });
-                builder.show();
-            }
+//            if (MainActivity.this.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+//                final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+//
+//                builder.setTitle("블루투스에 대한 액세스가 필요합니다");
+//                builder.setMessage("어플리케이션이 블루투스를 감지 할 수 있도록 위치 정보 액세스 권한을 부여하십시오.");
+//                builder.setPositiveButton(android.R.string.ok, null);
+//
+//                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+//                    @Override
+//                    public void onDismiss(DialogInterface dialog) {
+//                        requestPermissions(new String[]{Manifest.permission.BLUETOOTH_SCAN}, 2);
+//                    }
+//                });
+//                builder.show();
+//            }
         }
     }
 

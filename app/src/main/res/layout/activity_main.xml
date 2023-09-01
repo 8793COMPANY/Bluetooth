@@ -34,6 +34,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/main_text"/>
 
+    <TextView
+        android:id="@+id/bluetooth_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="연결된 기기 : 없음"
+        android:textSize="15dp"
+        android:textColor="@color/black"
+        app:layout_constraintHorizontal_bias="0.067"
+        app:layout_constraintBottom_toBottomOf="@+id/bluetooth_img"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/bluetooth_img"/>
+
     <ImageView
         android:id="@+id/lock_text"
         android:layout_width="0dp"
@@ -97,12 +110,24 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/uv_light_img"/>
+
+    <TextView
+        android:id="@+id/time_check_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:textSize="15dp"
+        app:layout_constraintHorizontal_bias="0.7"
+        app:layout_constraintLeft_toRightOf="@+id/time_text"
+        app:layout_constraintRight_toRightOf="@+id/time_slider"
+        app:layout_constraintTop_toTopOf="@+id/time_text"
+        app:layout_constraintBottom_toBottomOf="@+id/time_text"/>
     
     <com.google.android.material.slider.Slider
         android:id="@+id/time_slider"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="0dp"
         android:valueFrom="1"
         android:valueTo="10"
         android:stepSize="3"
@@ -122,6 +147,7 @@
         app:layout_constraintTop_toBottomOf="@+id/time_text"/>
 
     <LinearLayout
+        android:id="@+id/slider_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -167,6 +193,61 @@
             android:textSize="16dp"
             android:textColor="@color/black"/>
     </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/time_progress"
+        android:layout_width="0dp"
+        android:layout_height="10dp"
+        android:layout_marginTop="10dp"
+        android:visibility="invisible"
+        android:progressDrawable="@drawable/custom_progress"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        app:layout_constraintWidth_percent="0.833"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/slider_text"/>
+
+    <SeekBar
+        android:id="@+id/time_seekbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+
+        android:splitTrack="true"
+        android:tickMark="@drawable/custom_seekbar_thumb"
+        android:progressDrawable="@drawable/custom_seekbar_progress"
+        android:thumb="@drawable/custom_seekbar_thumb"
+        android:visibility="gone"
+        app:layout_constraintWidth_percent="0.833"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/slider_text"/>
+
+    <com.xw.repo.BubbleSeekBar
+        android:id="@+id/bubble_seekbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        app:bsb_min="0"
+        app:bsb_max="10"
+        app:bsb_section_count="3"
+        app:bsb_show_section_mark="true"
+        app:bsb_track_color="#ffffff"
+        app:bsb_second_track_color="#657ccb"
+        app:bsb_thumb_color="#657ccb"
+        app:bsb_track_size="5dp"
+        app:bsb_second_track_size="8dp"
+        app:bsb_show_progress_in_float="true"
+        app:bsb_thumb_radius="5dp"
+        app:bsb_thumb_radius_on_dragging="5dp"
+        app:bsb_touch_to_seek="true"
+        app:bsb_anim_duration="100"
+        app:bsb_seek_step_section="true"
+        android:visibility="gone"
+        app:layout_constraintWidth_percent="0.833"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/time_seekbar"/>
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/progress"
