@@ -47,6 +47,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.Disposable;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -84,7 +85,9 @@ public class MainActivity extends AppCompatActivity {
     private long timeCountInMilliSeconds = 1 * 60000;
     private CountDownTimer countDownTimer;
     int count, count2;
+
     Observable<Long> source;
+    Disposable disposable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,6 +108,15 @@ public class MainActivity extends AppCompatActivity {
 
         // 타이머
         nCnt = 0;
+
+        // 블루투스 연결 확인
+        if (!bluetoothCheck) {
+            uv_light_img.setEnabled(false);
+            time_slider.setEnabled(false);
+            lock_img.setEnabled(false);
+
+            Toast.makeText(getApplicationContext(), "블루투스 연결부터 해주세요", Toast.LENGTH_SHORT).show();
+        }
 
         progressDialog = new ProgressDialog(this);
         progressDialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
@@ -163,6 +175,7 @@ public class MainActivity extends AppCompatActivity {
                     connectedThread.write("b");
                     uv_light_img.setChecked(false);
                     time_check_text.setText("");
+                    time_check_text.setVisibility(View.GONE);
                 }
             }
         });
@@ -235,9 +248,10 @@ public class MainActivity extends AppCompatActivity {
         uv_light_img.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (bluetoothCheck) {
-                    if (isChecked) { // on
+                if (isChecked) { // on
+                    if (time_slider.getValue() != 1) {
                         time_progress.setVisibility(View.VISIBLE);
+                    }
 //                        time = bubble_seekbar.getProgress();
 //                        Log.e("testtest", time+"");
 //
@@ -348,83 +362,87 @@ public class MainActivity extends AppCompatActivity {
 //                            timerCall = new Timer();
 //                            timerCall.schedule(timerTask, 0, 1000);
 //                        }
-                        time = time_slider.getValue();
-                        Log.e("testtest", time+"");
+                    time = time_slider.getValue();
+                    Log.e("testtest", time+"");
 
-                        if ((int) time == 1) {
-                            if (connectedThread != null) {
-                                connectedThread.write("a");
+                    if ((int) time == 1) {
+                        if (connectedThread != null) {
+                            connectedThread.write("a");
+                        }
+                        setTimerValues(0);
+                    } else {
+                        switch ((int) time) {
+                            case 4: { // 3(180)
+                                nCnt = 4;
+                                //nCnt = 180;
+                                //setTimerValues(3);
+                                time_progress.setMax(300);
+                                time_progress.setProgress(300);
+                                break;
                             }
-                            setTimerValues(0);
-                        } else {
-                            switch ((int) time) {
-                                case 4: { // 3(180)
-                                    nCnt = 4;
-                                    //nCnt = 180;
-                                    //setTimerValues(3);
-                                    time_progress.setMax(300);
-                                    time_progress.setProgress(300);
-                                    break;
-                                }
-                                case 7: { // 5(300)
-                                    nCnt = 6;
-                                    //setTimerValues(5);
-                                    time_progress.setMax(500);
-                                    time_progress.setProgress(500);
-                                    break;
-                                }
-                                case 10: { // 10(600)
-                                    nCnt = 11;
-                                    //setTimerValues(10);
-                                    time_progress.setMax(1000);
-                                    time_progress.setProgress(1000);
-                                    break;
-                                }
-                                default:
-                                    break;
+                            case 7: { // 5(300)
+                                nCnt = 6;
+                                //setTimerValues(5);
+                                time_progress.setMax(500);
+                                time_progress.setProgress(500);
+                                break;
                             }
-
-                            //setProgressBarValues();
-                            //startCountdownTimer();
-
-                            if (timerTask != null) {
-                                timerTask.cancel();
+                            case 10: { // 10(600)
+                                nCnt = 11;
+                                //setTimerValues(10);
+                                time_progress.setMax(1000);
+                                time_progress.setProgress(1000);
+                                break;
                             }
+                            default:
+                                break;
+                        }
 
-                            timerTask = new TimerTask() {
-                                @Override
-                                public void run() {
-                                    if (connectedThread != null) {
-                                        nCnt--;
+                        //setProgressBarValues();
+                        //startCountdownTimer();
 
-                                        min = nCnt/60;
-                                        second = nCnt%60;
+                        if (timerTask != null) {
+                            timerTask.cancel();
+                        }
 
-                                        if (nCnt <= 0) {
-                                            connectedThread.write("b");
-                                            uv_light_img.setChecked(false);
-                                            timerCall.cancel();
-                                            runOnUiThread(new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    time_check_text.setText("");
-                                                    time_progress.setProgress(nCnt, true);
-                                                    //time_progress.setVisibility(View.INVISIBLE);
+                        timerTask = new TimerTask() {
+                            @Override
+                            public void run() {
+                                if (connectedThread != null) {
+                                    nCnt--;
+
+                                    min = nCnt/60;
+                                    second = nCnt%60;
+
+                                    if (nCnt <= 0) {
+                                        connectedThread.write("b");
+                                        uv_light_img.setChecked(false);
+                                        timerCall.cancel();
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                time_check_text.setText("");
+                                                time_check_text.setVisibility(View.GONE);
+                                                time_progress.setProgress(nCnt, true);
+                                                //time_progress.setVisibility(View.INVISIBLE);
+                                                time_progress.setVisibility(View.GONE);
+                                            }
+                                        });
+                                    } else {
+                                        connectedThread.write("a");
+                                        Log.e("testtest", nCnt+"");
+                                        Log.e("testtest", min + "분 "+ second + "초");
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+
+                                            public void run() {
+                                                time_check_text.setVisibility(View.VISIBLE);
+
+                                                if (min == 0) {
+                                                    time_check_text.setText(second + "초");
+                                                } else {
+                                                    time_check_text.setText(min + "분 "+ second + "초");
                                                 }
-                                            });
-                                        } else {
-                                            connectedThread.write("a");
-                                            Log.e("testtest", nCnt+"");
-                                            Log.e("testtest", min + "분 "+ second + "초");
-                                            runOnUiThread(new Runnable() {
-                                                @Override
-
-                                                public void run() {
-                                                    if (min == 0) {
-                                                        time_check_text.setText(second + "초");
-                                                    } else {
-                                                        time_check_text.setText(min + "분 "+ second + "초");
-                                                    }
 
 //                                                    time = time - 0.1f;
 //                                                    time_slider.setValue(time);
@@ -440,52 +458,60 @@ public class MainActivity extends AppCompatActivity {
 //                                                        time_progress.setProgress((int) (time_progress.getProgress() - it), true);
 //                                                    });
 
-                                                    //time_progress.setProgress(nCnt, true);
+                                                //time_progress.setProgress(nCnt, true);
 
-                                                    source = Observable.interval(10L, TimeUnit.MILLISECONDS).map(interval ->
-                                                            interval + 1).take(100);
+                                                source = Observable.interval(10L, TimeUnit.MILLISECONDS).map(interval ->
+                                                        interval + 1).take(100);
 
-                                                    int currentProgress = time_progress.getProgress();
+                                                int currentProgress = time_progress.getProgress();
 
-                                                    source.subscribe(it -> {
-                                                        //Log.e("testtest", it+"");
-                                                        //time_progress.setProgress((int) (nCnt - it), true);
-                                                        if (nCnt != 0) {
-                                                            time_progress.setProgress(currentProgress - it.intValue());
-                                                        } else {
-                                                            time_progress.setProgress(0, true);
-                                                            time_progress.setVisibility(View.INVISIBLE);
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        }
+                                                disposable = source.subscribe(it -> {
+                                                    //Log.e("testtest", it+"");
+                                                    //time_progress.setProgress((int) (nCnt - it), true);
+
+                                                    if (nCnt != 0) {
+                                                        time_progress.setProgress(currentProgress - it.intValue());
+                                                    } else {
+                                                        time_progress.setProgress(0, true);
+//                                                            time_progress.setVisibility(View.GONE);
+                                                    }
+                                                });
+                                            }
+                                        });
                                     }
                                 }
-                            };
+                            }
+                        };
 
-                            timerCall = new Timer();
-                            timerCall.schedule(timerTask, 0, 1000);
+                        timerCall = new Timer();
+                        timerCall.schedule(timerTask, 0, 1000);
+                    }
+                } else { // off
+                    if (connectedThread != null) {
+                        if (timerCall != null) {
+                            timerCall.cancel();
                         }
-                    } else { // off
-                        if (connectedThread != null) {
-                            if (timerCall != null) {
-                                timerCall.cancel();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                time_check_text.setText("");
+                                time_check_text.setVisibility(View.GONE);
+                                time_progress.setVisibility(View.GONE);
                             }
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    time_check_text.setText("");
-                                }
-                            });
-                            connectedThread.write("b");
-                            if (countDownTimer != null) {
-                                stopCountdownTimer();
+                        });
+                        connectedThread.write("b");
+                        if (countDownTimer != null) {
+                            stopCountdownTimer();
+                        }
+
+                        if (source != null) {
+                            if (disposable != null) {
+                                disposable.dispose();
                             }
+                        } else {
+                            Log.e("testtest", "source null");
                         }
                     }
-                } else {
-                    Toast.makeText(getApplicationContext(), "블루투스 연결부터 해주세요", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -631,6 +657,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
             // 이미 연결이 되어있는 케이스 체크하기
             Toast.makeText(getApplicationContext(), "연결실패! 다시 시도해주세요", Toast.LENGTH_SHORT).show();
+            Log.e("testtest", "error : " + e);
         }
         progressDialog.dismiss();
     }
@@ -642,15 +669,27 @@ public class MainActivity extends AppCompatActivity {
             String action = intent.getAction();
 
             if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
-                Log.e("testtest", "열결됨");
+                Log.e("testtest", "연결됨");
                 bluetooth_img.setBackgroundResource(R.drawable.bluetooth_image_on);
                 bluetoothCheck = true;
                 bluetooth_text.setText("연결된 기기 : " + connectDevice);
+
+                uv_light_img.setEnabled(true);
+                time_slider.setEnabled(true);
+                lock_img.setEnabled(true);
+
+                Toast.makeText(getApplicationContext(), "블루투스 연결이 완료되었습니다!", Toast.LENGTH_SHORT).show();
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
-                Log.e("testtest", "열결 끊김");
+                Log.e("testtest", "연결 끊김");
                 bluetooth_img.setBackgroundResource(R.drawable.bluetooth_image_off);
                 bluetoothCheck = false;
                 bluetooth_text.setText("연결된 기기 : 없음");
+
+                uv_light_img.setEnabled(false);
+                time_slider.setEnabled(false);
+                lock_img.setEnabled(false);
+
+                Toast.makeText(getApplicationContext(), "블루투스 연결이 끊겼습니다. 다시 연결해주세요!", Toast.LENGTH_SHORT).show();
             }
         }
     };

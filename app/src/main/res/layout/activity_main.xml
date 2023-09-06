@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
     android:background="#f2f3f7"
     tools:context=".MainActivity">
 
@@ -104,7 +105,7 @@
         android:id="@+id/time_text"
         android:layout_width="0dp"
         android:layout_height="21dp"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="30dp"
         android:background="@drawable/time_text"
         app:layout_constraintDimensionRatio="230:42"
         app:layout_constraintEnd_toEndOf="parent"
@@ -115,13 +116,27 @@
         android:id="@+id/time_check_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="0dp"
         android:textColor="@color/black"
         android:textSize="15dp"
-        app:layout_constraintHorizontal_bias="0.7"
+        android:visibility="gone"
+        app:layout_constraintHorizontal_bias="0.9"
         app:layout_constraintLeft_toRightOf="@+id/time_text"
-        app:layout_constraintRight_toRightOf="@+id/time_slider"
-        app:layout_constraintTop_toTopOf="@+id/time_text"
-        app:layout_constraintBottom_toBottomOf="@+id/time_text"/>
+        app:layout_constraintRight_toRightOf="@+id/time_progress"
+        app:layout_constraintTop_toBottomOf="@+id/time_text"/>
+
+    <ProgressBar
+        android:id="@+id/time_progress"
+        android:layout_width="0dp"
+        android:layout_height="10dp"
+        android:layout_marginTop="10dp"
+        android:visibility="gone"
+        android:progressDrawable="@drawable/custom_progress"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        app:layout_constraintWidth_percent="0.765"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/time_check_text"/>
     
     <com.google.android.material.slider.Slider
         android:id="@+id/time_slider"
@@ -144,7 +159,7 @@
         app:layout_constraintWidth_percent="0.833"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/time_text"/>
+        app:layout_constraintTop_toBottomOf="@+id/time_progress"/>
 
     <LinearLayout
         android:id="@+id/slider_text"
@@ -193,19 +208,6 @@
             android:textSize="16dp"
             android:textColor="@color/black"/>
     </LinearLayout>
-
-    <ProgressBar
-        android:id="@+id/time_progress"
-        android:layout_width="0dp"
-        android:layout_height="10dp"
-        android:layout_marginTop="10dp"
-        android:visibility="invisible"
-        android:progressDrawable="@drawable/custom_progress"
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-        app:layout_constraintWidth_percent="0.833"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/slider_text"/>
 
     <SeekBar
         android:id="@+id/time_seekbar"
